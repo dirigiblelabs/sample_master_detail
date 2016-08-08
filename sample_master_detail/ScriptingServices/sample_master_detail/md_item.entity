@@ -1,0 +1,15 @@
+{
+  "entityName":"Md_item",
+  "tableName":"MD_ITEM",
+  "tableType":"TABLE",
+  "serviceName":"md_item.js",
+  "libraryName":"md_item_lib.js",
+  "specification":"md_item.swagger",
+  "getEnabled":"true",
+  "postEnabled":"true",
+  "putEnabled":"true",
+  "deleteEnabled":"true",
+  "countEnabled":"true",
+  "offsetAndLimitEnabled":"true",
+  "metadataEnabled":"true"
+}

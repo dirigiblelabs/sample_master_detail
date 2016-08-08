@@ -1,0 +1,199 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "version": "0.0.0",
+        "title": "Md_item Entity Service",
+        "description":"This is a RESTful web service for listing, viewing and managing entities of the type 'Md_item'"
+    },
+    "basePath":"/services",
+    "tags":[
+      {
+         "name":"Md_item",
+         "description":"View and manage Md_item objects"
+      }
+    ],
+    "paths": {
+        "/js/sample_master_detail/md_item.js": {
+            "get": {
+            	"tags":[
+               		"Md_item"
+            	],
+                "description": "Gets 'Md_item' objects.\n",
+                "parameters": [
+                    {
+                        "name": "count",
+                        "in": "query",
+                        "description": "Count of all the records",
+                        "required": false,
+                        "type": "boolean"
+                    },
+                    {
+                        "name": "mdi_id",
+                        "in": "query",
+                        "description": "Identifier of the 'Md_item' object",
+                        "required": false,
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    {
+                        "name": "metadata",
+                        "in": "query",
+                        "description": "Metadata of the 'Md_item' object",
+                        "required": false,
+                        "type": "boolean"
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Limit of the objects list",
+                        "required": false,
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "Offset of the objects list",
+                        "required": false,
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Sort parameter",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "desc",
+                        "in": "query",
+                        "description": "Descending order",
+                        "required": false,
+                        "type": "boolean"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "schema":{
+		                     "$ref":"#/definitions/Md_item"
+                        }
+                    }
+                }
+            },
+            "post": {
+            	"tags":[
+               		"Md_item"
+            	],
+                "description": "Creates a new 'Md_item' object.\n",
+                "consumes":[
+	               "application/json"
+	            ],
+	            "produces":[
+	               "plain/text"
+	            ],
+	            "parameters":[
+	               {
+	                  "in":"body",
+	                  "name":"body",
+	                  "description":"Md_item object that needs to be added",
+	                  "required":true,
+	                  "schema":{
+	                     "$ref":"#/definitions/Md_item"
+	                  }
+	               }
+	            ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "schema":{
+		                     "$ref":"#/definitions/Md_item"
+                        }
+                    }
+                }
+            },
+            "put": {
+            	"tags":[
+               		"Md_item"
+            	],
+                "description": "Updates an existing 'Md_item' object.\n",
+                "consumes":[
+	               "application/json"
+	            ],
+	            "produces":[
+	               "plain/text"
+	            ],
+	            "parameters":[
+	               {
+	                  "in":"body",
+	                  "name":"body",
+	                  "description":"Md_item object that needs to be added",
+	                  "required":true,
+	                  "schema":{
+	                     "$ref":"#/definitions/Md_item"
+	                  }
+	               }
+	            ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "schema":{
+		                     "$ref":"#/definitions/Md_item"
+                        }
+                    }
+                }
+            },
+            "delete": {
+            	"tags":[
+               		"Md_item"
+            	],
+                "description": "Deletes 'Md_item' objects.\n",
+                "parameters": [
+                    {
+                        "name": "mdi_id",
+                        "in": "query",
+                        "description": "Identifier of the 'Md_item' object",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "schema":{
+		                     "$ref":"#/definitions/Md_item"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions":{
+        "Md_item": {
+	        "type":"object",
+	        "properties": {
+        		"mdi_id": {
+	            	"type": 
+        "integer"
+	    		}
+				,
+        		"mdi_mdh_id": {
+	            	"type": 
+        "integer"
+	    		}
+				,
+        		"mdi_name": {
+	            	"type": 
+        "string"
+	    		}
+				,
+        		"mdi_description": {
+	            	"type": 
+        "string"
+	    		}
+	        }
+        }
+	}
+}

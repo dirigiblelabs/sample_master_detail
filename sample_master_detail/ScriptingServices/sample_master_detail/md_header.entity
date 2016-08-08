@@ -1,0 +1,15 @@
+{
+  "entityName":"Md_header",
+  "tableName":"MD_HEADER",
+  "tableType":"TABLE",
+  "serviceName":"md_header.js",
+  "libraryName":"md_header_lib.js",
+  "specification":"md_header.swagger",
+  "getEnabled":"true",
+  "postEnabled":"true",
+  "putEnabled":"true",
+  "deleteEnabled":"true",
+  "countEnabled":"true",
+  "offsetAndLimitEnabled":"true",
+  "metadataEnabled":"true"
+}

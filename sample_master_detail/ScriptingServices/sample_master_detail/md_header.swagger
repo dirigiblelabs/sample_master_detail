@@ -1,0 +1,194 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "version": "0.0.0",
+        "title": "Md_header Entity Service",
+        "description":"This is a RESTful web service for listing, viewing and managing entities of the type 'Md_header'"
+    },
+    "basePath":"/services",
+    "tags":[
+      {
+         "name":"Md_header",
+         "description":"View and manage Md_header objects"
+      }
+    ],
+    "paths": {
+        "/js/sample_master_detail/md_header.js": {
+            "get": {
+            	"tags":[
+               		"Md_header"
+            	],
+                "description": "Gets 'Md_header' objects.\n",
+                "parameters": [
+                    {
+                        "name": "count",
+                        "in": "query",
+                        "description": "Count of all the records",
+                        "required": false,
+                        "type": "boolean"
+                    },
+                    {
+                        "name": "mdh_id",
+                        "in": "query",
+                        "description": "Identifier of the 'Md_header' object",
+                        "required": false,
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    {
+                        "name": "metadata",
+                        "in": "query",
+                        "description": "Metadata of the 'Md_header' object",
+                        "required": false,
+                        "type": "boolean"
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Limit of the objects list",
+                        "required": false,
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "Offset of the objects list",
+                        "required": false,
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Sort parameter",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "desc",
+                        "in": "query",
+                        "description": "Descending order",
+                        "required": false,
+                        "type": "boolean"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "schema":{
+		                     "$ref":"#/definitions/Md_header"
+                        }
+                    }
+                }
+            },
+            "post": {
+            	"tags":[
+               		"Md_header"
+            	],
+                "description": "Creates a new 'Md_header' object.\n",
+                "consumes":[
+	               "application/json"
+	            ],
+	            "produces":[
+	               "plain/text"
+	            ],
+	            "parameters":[
+	               {
+	                  "in":"body",
+	                  "name":"body",
+	                  "description":"Md_header object that needs to be added",
+	                  "required":true,
+	                  "schema":{
+	                     "$ref":"#/definitions/Md_header"
+	                  }
+	               }
+	            ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "schema":{
+		                     "$ref":"#/definitions/Md_header"
+                        }
+                    }
+                }
+            },
+            "put": {
+            	"tags":[
+               		"Md_header"
+            	],
+                "description": "Updates an existing 'Md_header' object.\n",
+                "consumes":[
+	               "application/json"
+	            ],
+	            "produces":[
+	               "plain/text"
+	            ],
+	            "parameters":[
+	               {
+	                  "in":"body",
+	                  "name":"body",
+	                  "description":"Md_header object that needs to be added",
+	                  "required":true,
+	                  "schema":{
+	                     "$ref":"#/definitions/Md_header"
+	                  }
+	               }
+	            ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "schema":{
+		                     "$ref":"#/definitions/Md_header"
+                        }
+                    }
+                }
+            },
+            "delete": {
+            	"tags":[
+               		"Md_header"
+            	],
+                "description": "Deletes 'Md_header' objects.\n",
+                "parameters": [
+                    {
+                        "name": "mdh_id",
+                        "in": "query",
+                        "description": "Identifier of the 'Md_header' object",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "schema":{
+		                     "$ref":"#/definitions/Md_header"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions":{
+        "Md_header": {
+	        "type":"object",
+	        "properties": {
+        		"mdh_id": {
+	            	"type": 
+        "integer"
+	    		}
+				,
+        		"mdh_description": {
+	            	"type": 
+        "string"
+	    		}
+				,
+        		"mdh_name": {
+	            	"type": 
+        "string"
+	    		}
+	        }
+        }
+	}
+}
