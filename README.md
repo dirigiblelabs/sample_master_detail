@@ -50,7 +50,7 @@ Backend
 - [Dirigible JavaScript services](http://www.dirigible.io/help/scripting_services.html)
 - [Dirigible Data Structures](http://www.dirigible.io/help/data_structures.html)
 
-The JavaScript services are also (Swagger)[http://swagger.io/]-ready. Consider the project (swagger_ui)[https://github.com/dirigiblelabs/swagger_ui] to make use of it to test and further adapt the services to your scenario.
+The JavaScript services are also [Swagger](http://swagger.io/)-ready. Consider the project [swagger_ui](https://github.com/dirigiblelabs/swagger_ui) to make use of it to test and further adapt the services to your scenario.
 In addition, in the WebContent folder you will find two convenience user interfaces for CRUD operations on Headers and Items. You can use them e.g. to populate 
 
 ##### Limitations
