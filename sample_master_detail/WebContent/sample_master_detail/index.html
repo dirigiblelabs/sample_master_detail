@@ -97,8 +97,7 @@
 		      },
 		      views: {
 		          'master@': {
-		              templateUrl: 'views/master-list.html',
-		              controller: 'MasterListCtrl'
+		              templateUrl: 'views/none.html'
 		          },
 			      'detail@': {
 					  templateUrl: "views/detail_editor.html",
@@ -182,8 +181,6 @@
 		
 		$scope.items = $stateParams.items;
 		$scope.selectedItem= $stateParams.selectedItem;
-		
-		$scope.isDisabled = $stateParams.itemForEdit!==undefined;
 		
 		$scope.sortByPropertyName = 'mdh_name';
 	    $scope.reverse = false;//ASC
