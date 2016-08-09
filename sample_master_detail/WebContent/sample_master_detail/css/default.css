@@ -19,7 +19,8 @@
 	.page-title {
 	  margin: 2rem 0rem 4rem 0rem;
 	  border-bottom: 2px solid #eee;
-	  flex: 0 1 auto;
+	  flex: 0 3 auto;
+	  overflow: hidden;
 	  min-width:0px;
 	}
 	
@@ -32,6 +33,7 @@
 	
 	.page-content {
 	  flex: 1 auto;
+	  flex-wrap: wrap;
 	  display: flex;
 	  flex-direction: row;
       align-items: stretch;
@@ -51,11 +53,12 @@
 	}
 
 	.master {
+	  flex: 1 auto;
+	  order: 1;
 	  overflow: hidden;
 	  padding-left: 0;
 	  border-right: 1px solid #ddd;
 	  border-top-left-radius: 4px;
-	  flex: 1 auto;
 	} 
 	
 	.master .nav {
@@ -175,8 +178,10 @@
 	}
 	
 	[ui-view="detail"] {
-		flex: 0 1 80%;
-		border-top-right-radius: 4px;
+	  flex: 1 80%;
+	  order: 2;
+	  flex-wrap: nowrap;
+	  border-top-right-radius: 4px;
 	}
 	
 	.detail {
@@ -186,15 +191,25 @@
 	  border-top-right-radius: 4px;
 	}
 	
+	/*layout details content*/
+	[ui-view="detail"] .detail {
+	  display: flex;
+      flex-direction: column;
+	}
+	
 	.detail .header {
+	  order: 1;
+	  flex: 1 0 auto;
+	  max-height: 5.6rem; /* max-height = content max height */	  
+	  position: relative; 
 	  border-top-right-radius: 4px;
 	}
 
-	
 	.detail .object-header {
+	  order: 2;
+	  flex: 0 1 auto;
+	  min-height: 11rem; /* min-height = content height */
 	  display: flex;
-	  position: absolute;
-	  margin: 5.7rem 0rem 0rem 0rem;
 	  width: 100%;
 	  padding: 2rem 1rem 1rem 1rem;
 	  background-color: #f2f8fc;
@@ -210,13 +225,10 @@
 	    border-top-right-radius: 5px;
 	}
 	
-	.detail .list-content {
-		padding-top: 19.7rem;
-	}
-	
 	.detail .object-header section {
 		margin-right: 1rem;
 		flex: 1 50%;
+		white-space: nowrap;
 	}
 	
 	.detail .object-header .object-image {
@@ -297,6 +309,10 @@
  	.items-list {
 		margin-top: 6rem;
 	} 
+	
+	.list-content {
+		order:3;
+	}
 	
 	.list-content .toolbar {
 	  margin: 1.4rem 1rem;
