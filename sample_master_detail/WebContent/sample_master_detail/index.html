@@ -67,6 +67,7 @@
 		          },
 		          'detail': {
 		              templateUrl: 'views/empty.html',
+		              controller: 'EmptyCtrl'
 		          },
 		          'notifications': {
 		              templateUrl: 'views/notifications.html',
@@ -175,6 +176,38 @@
 		    }
 		});
 	})
+	.controller('EmptyCtrl', ['Entity', '$scope', '$state', '$stateParams', function (Entity, $scope, $state, $stateParams) {
+	
+		$scope.createItem = function(){
+			Entity.save({cascaded: true}, {
+						"mdh_name":"Business Object Name",
+						"mdh_description":"Description for business object",
+		
+						"items": [{
+							"mdi_name":"Item 1",
+							"mdi_description":"Description for Item 1"
+						},{
+							"mdi_name":"Item 2",
+							"mdi_description":"Description for Item 2"
+						},{
+							"mdi_name":"Item 3",
+							"mdi_description":"Description for Item 3"
+						}]
+					}).$promise
+			.then(function(newItem){
+				$stateParams.boId = newItem.mdh_id;
+				$stateParams.message = {
+					text: 'New Buisness Object successfully created.',
+					type: 'alert-success'
+				}
+				$state.go($state.current, $stateParams, {reload: true});
+			}, function(reason){
+				console.error(reason);
+				// Modal info popup may be triggered here
+			});
+		};
+	
+	}])
 	.controller('MasterListCtrl', ['Entity', '$scope', 'orderByFilter', '$state', '$stateParams', '$window', function (Entity, $scope, orderBy, $state, $stateParams, $window) {
 		
 		/*Controller invoked upon routing or navigation click events*/
@@ -214,7 +247,7 @@
 						$scope.items = result;//initialize the items to display
 						$scope.sortBy($scope.sortByPropertyName);
 						
-						itemId = itemId || result[0].mdh_id;					
+						itemId = itemId || $scope.items[0].mdh_id;					
 						var item = findItemById(result, itemId);
 						if(item === undefined){
 							fireLocationError.apply(this);
@@ -223,7 +256,7 @@
 						$scope.selectItem.apply($scope, [item]);//set the requested item selected
 						
 					} else {
-						if(itemId !== undefined){
+						if(!!itemId){
 							fireLocationError.apply($scope);
 							$state.go('items', $stateParams);
 						}
@@ -282,7 +315,7 @@
 		};
 		
 		$scope.deleteItem = function(itemId){
-			Entity.remove({boId: itemId}).$promise
+			Entity.remove({boId: itemId, cascaded: true}).$promise
 			.then(function(){
 				//$state.reload();
 				delete $stateParams.boId;
@@ -290,7 +323,7 @@
 						text: 'Buisness Object successfully deleted.',
 						type: 'alert-success'
 					}
-				$state.go($state.current, $stateParams, {reload: true, location:false, inherit: false});
+				$state.go($state.current, $stateParams, {reload: true, location:true, inherit: false});
 			})
 		}
 		
@@ -354,7 +387,7 @@
 		};
 		
 		$scope.saveItem = function() {
-		    Entity.update({cascaded:true}, $scope.selectedItem).$promise
+		    Entity.update({boId: $scope.selectedItem.mdh_id, cascaded:true}, $scope.selectedItem).$promise
 		    	.then(function(item){
 					$state.go('items.select', {boId: $scope.selectedItem.mdh_id, selectedItem:$scope.selectedItem});
 		    	});

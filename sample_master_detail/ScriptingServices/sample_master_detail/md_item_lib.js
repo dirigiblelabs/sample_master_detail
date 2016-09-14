@@ -93,22 +93,23 @@ exports.list = function(headerId, limit, offset, sort, desc) {
     try {
         var items = [];
         var sql = "SELECT ";
-        if (limit !== null && offset !== null) {
+        if ((limit !== null && limit !== undefined) && (offset !== null && offset !== undefined)) {
             sql += " " + datasource.getPaging().genTopAndStart(limit, offset);
         }
         sql += " * FROM MD_ITEM";
-        if(headerId !== null){
+        if(headerId !== null && headerId !== undefined){
         	sql += " WHERE MDI_MDH_ID=" + headerId;
         }
-        if (sort !== null) {
+        if (sort !== null && sort !== undefined) {
             sql += " ORDER BY " + sort;
         }
-        if (sort !== null && desc !== null) {
+        if ((sort !== null && sort !== undefined) && (desc !== null && desc !== undefined)) {
             sql += " DESC ";
         }
-        if (limit !== null && offset !== null) {
+        if ((limit !== null && limit !== undefined) && (offset !== null && offset !== undefined)) {
             sql += " " + datasource.getPaging().genLimitAndOffset(limit, offset);
         }
+        
         var statement = connection.prepareStatement(sql);
         var resultSet = statement.executeQuery();
         while (resultSet.next()) {

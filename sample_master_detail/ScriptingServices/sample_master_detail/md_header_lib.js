@@ -198,35 +198,61 @@ exports.update = function(entity, cascaded) {
         statement.setInt(++i, id);
         statement.executeUpdate();    
 
+		//TODO: Remove cascading for update operation.  It's too undeterministic for its dependencies.
+
 		if(cascaded){
+			//analyze requested depenedencies for update action - insert/update/remove
+			var persistedDependencyCollection = mdItems.list(entity.mdh_id);
+			var requestedDependencyCollection = entity[itemsEntitySetName];
 			
-			if(entity[itemsEntitySetName] && entity[itemsEntitySetName].length > 0){
-
-				var persistedItems = mdItems.list(entity.mdh_id);
-	
-				for(var k=0; k < persistedItems.length; k++) {
-					var itemToUpdate;					
-				   	for(var j=0; j < entity[itemsEntitySetName].length; j++){
-				   		
-		        		var item = entity[itemsEntitySetName][j];
-		        		if(persistedItems.mdi_id === item.mdi_id){
-		        			itemToUpdate = item;
-	        			}
-
-		    		}
-
-		    		if(!itemToUpdate){
-	        			mdItems.remove(persistedItems[k].mdi_id);
-	    			} else if(item.mdi_id){
-	        			mdItems.update(itemToUpdate);
-        			} else {
-	        			item.mdi_mdh_id = entity.mdh_id;
-	        			mdItems.insert(itemToUpdate);
-    				}	        				
-		    		
+			var removeCandidates = [];
+			if(requestedDependencyCollection.length < persistedDependencyCollection.length){
+				for(var j = 0; j < persistedDependencyCollection.length; j++) {
+					var perDependency = persistedDependencyCollection[j];
+					var reqActionCandidate;
+					for(var k = 0; k < requestedDependencyCollection.length; k++) {
+						var reqDependency = requestedDependencyCollection[k];
+						if(reqDependency.mdi_id && perDependency.mdi_id === reqDependency.mdi_id){
+							reqActionCandidate = reqDependency;
+							break;
+						}
+					}
+					if(!reqActionCandidate){
+						removeCandidates.push(perDependency);
+					}
 				}
-			
-	    	}
+			}
+			if(removeCandidates > 0){
+				for(var j=0; j < removeCandidates.length; j++){
+					console.info('Removing item with id ' + removeCandidates[j].mdi_id);
+	        		mdItems.remove(removeCandidates[j].mdi_id);
+				}
+				persistedDependencyCollection = mdItems.list(entity.mdh_id);
+			} else {
+				console.error('remove analysis went wrong');
+			}
+
+			for(var j = 0; j < requestedDependencyCollection.length; j++) {
+				var reqDependency = requestedDependencyCollection[j];
+/*				var persistentActionCandidate;
+				for(var k = 0; k < persistedDependencyCollection.length; k++) {
+					var perDependency = persistedDependencyCollection[k];
+					if(perDependency.mdi_id === reqDependency.mdi_id)
+						persistentActionCandidate = reqDependency;
+				}
+				if(!persistentActionCandidate){
+	    			console.info('Removing item with id ' + reqDependency.mdi_id);
+        			mdItems.remove(reqDependency.mdi_id);
+    			} else */if(reqDependency.mdi_id){
+    				console.info('Updating item with id ' + reqDependency.mdi_id);
+        			mdItems.update(reqDependency);
+    			} else {
+    				console.info('Inserting new item');
+        			reqDependency.mdi_mdh_id = entity.mdh_id;
+        			mdItems.insert(reqDependency);
+				}			
+			}
+
 		}
     	
         return id;
@@ -240,13 +266,22 @@ exports.update = function(entity, cascaded) {
 };
 
 // delete entity by id. Returns the id of the deleted entity.
-exports.remove = function(id) {
+exports.remove = function(id, cascaded) {
     var connection = datasource.getConnection();
     try {
     	var sql = "DELETE FROM MD_HEADER WHERE " + exports.pkToSQL();
         var statement = connection.prepareStatement(sql);
         statement.setString(1, id);
         statement.executeUpdate();
+        
+		if(cascaded && id){
+			var persistedItems = mdItems.list(id);
+			for(var k=0; k < persistedItems.length; k++) {
+        		mdItems.remove(persistedItems[k].mdi_id);
+			}
+		}        
+        
+        
         return id;
     }  catch(e) {
 		e.errContext = sql;
@@ -387,9 +422,9 @@ exports.http = {
 		}
 	},
 	
-	remove: function(id) {
+	remove: function(id, cascaded) {
 	    try{
-			exports.remove(id);
+			exports.remove(id, cascaded);
 			response.setStatus(response.NO_CONTENT);
 		} catch(e) {
     	    var errorCode = response.INTERNAL_SERVER_ERROR;
