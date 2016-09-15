@@ -176,10 +176,37 @@
 		    }
 		});
 	})
-	.controller('EmptyCtrl', ['Entity', '$scope', '$state', '$stateParams', function (Entity, $scope, $state, $stateParams) {
+	.service('Item', function($resource) {
+	  	return $resource('../../js/sample_master_detail/md_item.js/:boId', { boId:'@id' }, {
+		    save: {
+		        method: 'POST',
+		        interceptor: {
+	                response: function(res) {
+	                	var location = res.headers('Location');
+	                	if(location){
+	                		var id = location.substring(location.lastIndexOf('/')+1);
+	                		angular.extend(res.resource, { "mdi_id": id });
+                		} else {
+                			console.error('Cannot infer id after save operation. HTTP Response Header "Location" is missing: ' + location);
+            			}
+                        return res.resource;
+	                }
+	            }, 
+	            isArray: false
+		    },
+		    update: {
+		        method: 'PUT'
+		    }
+		});
+	})	
+	.service('masterDataSvc', ['Entity', 'Item',  '$q', function(Entity, Item, $q) {
 	
-		$scope.createItem = function(){
-			Entity.save({cascaded: true}, {
+		this.query = function(){
+			return Entity.query({expanded:true}).$promise;
+		};
+
+		this.create = function(){
+			return Entity.save({cascaded: true}, {
 						"mdh_name":"Business Object Name",
 						"mdh_description":"Description for business object",
 		
@@ -193,7 +220,45 @@
 							"mdi_name":"Item 3",
 							"mdi_description":"Description for Item 3"
 						}]
-					}).$promise
+					}).$promise;
+		};
+		
+		this.update = function(header){
+			if(header.items){
+				var items = header.items.filter(function(item){
+					if(!item.action){
+						return false;
+					}
+					return true;
+				});
+				var promises = items.map(function(item) {
+									var action = item.action;
+									delete item.action;
+									if(action === 'remove') {
+							        	return Item.remove({boId: item.mdi_id}).$promise;
+						        	} else {
+						        		return Item[action]({boId: item.mdi_id}, item).$promise;
+					        		}
+						    	});
+			}
+
+			promises.unshift(Entity.update({boId: header.mdh_id}, header).$promise);
+	    	return $q.all(promises);
+		};	
+		
+		this.remove = function(headerId, cascaded){
+			if(cascaded){
+				return Entity.remove({boId: headerId, cascaded: true}).$promise;
+			} else {
+				return Entity.remove({boId: headerId}).$promise;
+			}
+		};
+		
+	}])
+	.controller('EmptyCtrl', ['masterDataSvc', '$scope', '$state', '$stateParams', function (masterDataSvc, $scope, $state, $stateParams) {
+	
+		$scope.createItem = function(){
+			masterDataSvc.create()
 			.then(function(newItem){
 				$stateParams.boId = newItem.mdh_id;
 				$stateParams.message = {
@@ -208,7 +273,7 @@
 		};
 	
 	}])
-	.controller('MasterListCtrl', ['Entity', '$scope', 'orderByFilter', '$state', '$stateParams', '$window', function (Entity, $scope, orderBy, $state, $stateParams, $window) {
+	.controller('MasterListCtrl', ['masterDataSvc', '$scope', 'orderByFilter', '$state', '$stateParams', '$window', function (masterDataSvc, $scope, orderBy, $state, $stateParams, $window) {
 		
 		/*Controller invoked upon routing or navigation click events*/
 		
@@ -240,7 +305,7 @@
 		function init(){
 			var itemId = $state.params.boId;
 			if(!$scope.items){
-				Entity.query({expanded:true}).$promise
+				masterDataSvc.query()
 				.then(function(result){
 					if(result && result.length>0){
 						
@@ -286,21 +351,7 @@
 		init.apply(this);
 		
 		$scope.createItem = function(){
-			Entity.save({cascaded: true}, {
-						"mdh_name":"Business Object Name",
-						"mdh_description":"Description for business object",
-		
-						"items": [{
-							"mdi_name":"Item 1",
-							"mdi_description":"Description for Item 1"
-						},{
-							"mdi_name":"Item 2",
-							"mdi_description":"Description for Item 2"
-						},{
-							"mdi_name":"Item 3",
-							"mdi_description":"Description for Item 3"
-						}]
-					}).$promise
+			masterDataSvc.create()
 			.then(function(newItem){
 				$stateParams.boId = newItem.mdh_id;
 				$stateParams.message = {
@@ -315,7 +366,7 @@
 		};
 		
 		$scope.deleteItem = function(itemId){
-			Entity.remove({boId: itemId, cascaded: true}).$promise
+			masterDataSvc.remove(itemId)
 			.then(function(){
 				//$state.reload();
 				delete $stateParams.boId;
@@ -328,7 +379,7 @@
 		}
 		
 	}])
-	.controller('DetailsCtrl', ['Entity', '$scope', '$state', '$stateParams' , function (Entity, $scope, $state, $stateParams) {
+	.controller('DetailsCtrl', ['masterDataSvc', '$scope', '$state', '$stateParams' , function (masterDataSvc, $scope, $state, $stateParams) {
 		
 		$scope.selectedItem = $stateParams.selectedItem;
 				
@@ -340,7 +391,7 @@
 		$scope.duplicateItem = function() {
 			var duplicateItem = angular.copy($scope.selectedItem, {});
 			delete duplicateItem.mdh_id;
-			Entity.save({cascaded:true}, duplicateItem).$promise
+			masterDataSvc.create(duplicateItem)
 				.then(function(newItem){
 					$stateParams.boId = newItem.mdh_id;
 					$state.go($state.current, $stateParams, {reload: true, location:true, inherit: true});
@@ -348,21 +399,22 @@
 		};
 		
 		$scope.deleteItem = function() {
-			Entity.remove({boId: $scope.selectedItem.mdh_id, cascaded:true}).$promise
+			masterDataSvc.remove($scope.selectedItem.mdh_id)
 			.then(function(){
 				delete $stateParams.boId;
 				$stateParams.message = {
 						text: 'Buisness Object successfully deleted.',
 						type: 'alert-success'
 					}
-				$state.go($state.current, $stateParams, {reload: true, location:false, inherit: false});
+				$state.go($state.current, $stateParams, {reload: true, location:true, inherit: false});
 			});
 		};
 		
 	}])
-	.controller('EditCtrl', ['Entity', '$scope','$state', '$stateParams', function (Entity, $scope, $state, $stateParams) {
+	.controller('EditCtrl', ['masterDataSvc', '$scope','$state', '$stateParams', function (masterDataSvc, $scope, $state, $stateParams) {
 		
-		$scope.selectedItem = $stateParams.itemForEdit;
+		//$scope.selectedItem = $stateParams.itemForEdit;
+		$scope.selectedItem = angular.copy($stateParams.itemForEdit);
 				
 		$scope.openPropertyEditor = function(item){
 			$state.go('items.select.edit.property', {
@@ -378,18 +430,27 @@
 					break;
 				}
 			}
+			$stateParams.itemForEdit.items = $stateParams.itemForEdit.items.map(
+				function(currItem){
+					if(currItem.mdi_id && currItem.mdi_id === item.mdi_id){
+						currItem.action = 'remove';
+					}
+					return currItem;
+				});
 		};
 		
-		$scope.cancelEdit = function() {
+		$scope.cancelEdit = function() { 
 			delete $stateParams.boIdedit;
 			delete $stateParams.itemForEdit;
 		    $state.go("^", $stateParams);
 		};
 		
 		$scope.saveItem = function() {
-		    Entity.update({boId: $scope.selectedItem.mdh_id, cascaded:true}, $scope.selectedItem).$promise
+		    masterDataSvc.update($stateParams.itemForEdit)
 		    	.then(function(item){
 					$state.go('items.select', {boId: $scope.selectedItem.mdh_id, selectedItem:$scope.selectedItem});
+		    	}, function(err){
+		    		console.error('Update Master data failed.' + err);	
 		    	});
 		};
 				
@@ -402,7 +463,8 @@
 			isNewProperty = $stateParams.item === undefined ? true : false;
 			if(isNewProperty) {
 				$scope.item = {
-					mdi_name: "Item Name"
+					mdi_name: "Item Name",
+					mdi_mdh_id: $stateParams.selectedItem.mdh_id
 				}
 			} else {
 				$scope.item = $stateParams.item;
@@ -416,9 +478,11 @@
         $scope.ok = function() {
           
 	      if(isNewProperty){
-	      	selectedItem.items.push($scope.item);      		
+	      	$scope.item.action = 'save';
+	      	selectedItem.items.push($scope.item);
 	      	$stateParams.itemForEdit = $stateParams.selectedItem = selectedItem;
 	      } else {
+	      	$scope.item.action = 'update';
 	    	selectedItem = $stateParams.itemForEdit = $stateParams.selectedItem; 
 	      }
           $scope.$close(selectedItem);

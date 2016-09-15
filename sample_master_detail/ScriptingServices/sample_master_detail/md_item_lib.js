@@ -138,8 +138,11 @@ function createEntity(resultSet) {
 //Prepare a JSON object for insert into DB
 function createSQLEntity(item) {
     if(item){
+    	if(!item.mdi_description)
+    		item.mdi_description = null;
 		//perform any transofrmations here
-	}	
+	}
+	console.info("<<< " + item);
 	return item;
 }
 

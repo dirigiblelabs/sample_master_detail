@@ -177,10 +177,6 @@ exports.update = function(entity, cascaded) {
 	if(entity.mdh_name === undefined || entity.mdh_name === null){
 		throw new Error('Illegal mdh_name attribute: ' + entity.mdh_name);
 	}
-	
-	if(cascaded === undefined || cascaded === null){
-		cascaded = false;
-	}
 
     var connection = datasource.getConnection();
     try {
@@ -196,65 +192,8 @@ exports.update = function(entity, cascaded) {
         statement.setString(++i, entity.mdh_name);
         var id = entity.mdh_id;
         statement.setInt(++i, id);
-        statement.executeUpdate();    
+        statement.executeUpdate();
 
-		//TODO: Remove cascading for update operation.  It's too undeterministic for its dependencies.
-
-		if(cascaded){
-			//analyze requested depenedencies for update action - insert/update/remove
-			var persistedDependencyCollection = mdItems.list(entity.mdh_id);
-			var requestedDependencyCollection = entity[itemsEntitySetName];
-			
-			var removeCandidates = [];
-			if(requestedDependencyCollection.length < persistedDependencyCollection.length){
-				for(var j = 0; j < persistedDependencyCollection.length; j++) {
-					var perDependency = persistedDependencyCollection[j];
-					var reqActionCandidate;
-					for(var k = 0; k < requestedDependencyCollection.length; k++) {
-						var reqDependency = requestedDependencyCollection[k];
-						if(reqDependency.mdi_id && perDependency.mdi_id === reqDependency.mdi_id){
-							reqActionCandidate = reqDependency;
-							break;
-						}
-					}
-					if(!reqActionCandidate){
-						removeCandidates.push(perDependency);
-					}
-				}
-			}
-			if(removeCandidates > 0){
-				for(var j=0; j < removeCandidates.length; j++){
-					console.info('Removing item with id ' + removeCandidates[j].mdi_id);
-	        		mdItems.remove(removeCandidates[j].mdi_id);
-				}
-				persistedDependencyCollection = mdItems.list(entity.mdh_id);
-			} else {
-				console.error('remove analysis went wrong');
-			}
-
-			for(var j = 0; j < requestedDependencyCollection.length; j++) {
-				var reqDependency = requestedDependencyCollection[j];
-/*				var persistentActionCandidate;
-				for(var k = 0; k < persistedDependencyCollection.length; k++) {
-					var perDependency = persistedDependencyCollection[k];
-					if(perDependency.mdi_id === reqDependency.mdi_id)
-						persistentActionCandidate = reqDependency;
-				}
-				if(!persistentActionCandidate){
-	    			console.info('Removing item with id ' + reqDependency.mdi_id);
-        			mdItems.remove(reqDependency.mdi_id);
-    			} else */if(reqDependency.mdi_id){
-    				console.info('Updating item with id ' + reqDependency.mdi_id);
-        			mdItems.update(reqDependency);
-    			} else {
-    				console.info('Inserting new item');
-        			reqDependency.mdi_mdh_id = entity.mdh_id;
-        			mdItems.insert(reqDependency);
-				}			
-			}
-
-		}
-    	
         return id;
         
     } catch(e) {
