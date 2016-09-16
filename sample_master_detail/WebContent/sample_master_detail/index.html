@@ -273,8 +273,19 @@
 			return Entity.remove(reqParams).$promise;
 		};
 		
+		this.serviceErrorMessageFormatter = function(message, errorPayload){
+			if(errorPayload.data.err.code){
+				message += ': [' + errorPayload.data.err.code + '] ';
+			}
+			if(errorPayload.data.err.message){
+				message += ' ' + errorPayload.data.err.message;
+			}
+			return message;
+		};
+
+		
 	}])
-	.controller('EmptyCtrl', ['masterDataSvc', '$scope', '$state', '$stateParams', function (masterDataSvc, $scope, $state, $stateParams) {
+	.controller('EmptyCtrl', ['masterDataSvc', '$scope', '$log', '$state', '$stateParams', function (masterDataSvc, $scope, $log, $state, $stateParams) {
 	
 		$scope.createItem = function(){
 			masterDataSvc.create()
@@ -286,13 +297,18 @@
 				}
 				$state.go($state.current, $stateParams, {reload: true});
 			}, function(reason){
-				console.error(reason);
-				// Modal info popup may be triggered here
+				var message = masterDataSvc.serviceErrorMessageFormatter('Creating new Buisness Object failed', reason);
+				$log.error(message);			
+				$stateParams.message = {
+						text: message,
+						type: 'alert-danger'
+				}
+				$state.go($state.current, $stateParams, {reload: true});
 			});
 		};
 	
 	}])
-	.controller('MasterListCtrl', ['masterDataSvc', '$scope', 'orderByFilter', '$state', '$stateParams', '$window', function (masterDataSvc, $scope, orderBy, $state, $stateParams, $window) {
+	.controller('MasterListCtrl', ['masterDataSvc', '$scope', '$log', 'orderByFilter', '$state', '$stateParams', '$window', function (masterDataSvc, $scope, $log, orderBy, $state, $stateParams, $window) {
 		
 		/*Controller invoked upon routing or navigation click events*/
 		
@@ -319,7 +335,7 @@
 					boId: item.mdh_id
 				});
 			}
-		}
+		};
 
 		function init(){
 			var itemId = $state.params.boId;
@@ -361,14 +377,24 @@
 		}
 		
 		function fireLocationError(){
+			$log.debug('The requested application path ' + $window.location.href + " is not valid.");
 			$stateParams.message = {
-					text:$window.location.href + " is not valid application path. Check the URL and try again.",
+					text: $window.location.href + ' is not valid application path. Check the URL and try again.',
 					type: 'alert-danger'
-			}
+			};
 		}
 		
 		init.apply(this);
 		
+		function handleServiceError(text, errorPayload){
+			var message = masterDataSvc.serviceErrorMessageFormatter(text, errorPayload);
+			$log.error(message);			
+			$stateParams.message = {
+					text: message,
+					type: 'alert-danger'
+			};
+		};
+	
 		$scope.createItem = function(){
 			masterDataSvc.create()
 			.then(function(newItem){
@@ -379,8 +405,8 @@
 				}
 				$state.go($state.current, $stateParams, {reload: true});
 			}, function(reason){
-				console.error(reason);
-				// Modal info popup may be triggered here
+				handleServiceError('Creating new Buisness Object failed', reason);
+				$state.go('^', $stateParams, {reload: true});
 			});
 		};
 		
@@ -394,14 +420,26 @@
 						type: 'alert-success'
 					}
 				$state.go($state.current, $stateParams, {reload: true, location:true, inherit: false});
-			})
-		}
+			}, function(reason){
+				handleServiceError('Deleting Buisness Object failed', reason);
+				$state.go('^', $stateParams, {reload: true});
+			});
+		};
 		
 	}])
-	.controller('DetailsCtrl', ['masterDataSvc', '$scope', '$state', '$stateParams' , function (masterDataSvc, $scope, $state, $stateParams) {
+	.controller('DetailsCtrl', ['masterDataSvc', '$scope', '$log', '$state', '$stateParams' , function (masterDataSvc, $scope, $log, $state, $stateParams) {
 		
 		$scope.selectedItem = $stateParams.selectedItem;
-				
+		
+		function handleServiceError(text, errorPayload){
+			var message = masterDataSvc.serviceErrorMessageFormatter(text, errorPayload);
+			$log.error(message);			
+			$stateParams.message = {
+					text: message,
+					type: 'alert-danger'
+			};	
+		};
+		
 		$scope.startEdit = function() {
 		    $stateParams.itemForEdit = angular.copy($scope.selectedItem);		    
 		    $state.go("items.select.edit", $stateParams, {location:false});
@@ -414,6 +452,9 @@
 				.then(function(newItem){
 					$stateParams.boId = newItem.mdh_id;
 					$state.go($state.current, $stateParams, {reload: true, location:true, inherit: true});
+				}, function(reason){
+					handleServiceError('Duplicating Buisness Object failed', reason);
+					$state.go('^', $stateParams, {reload: true});
 				});
 		};
 		
@@ -426,15 +467,18 @@
 						type: 'alert-success'
 					}
 				$state.go($state.current, $stateParams, {reload: true, location:true, inherit: false});
-			});
+			}, function(reason){
+					handleServiceError('Deleting Buisness Object failed', reason);
+					$state.go('^', $stateParams, {reload: true});
+				});
 		};
 		
 	}])
-	.controller('EditCtrl', ['masterDataSvc', '$scope','$state', '$stateParams', function (masterDataSvc, $scope, $state, $stateParams) {
+	.controller('EditCtrl', ['masterDataSvc', '$scope', '$log', '$state', '$stateParams', function (masterDataSvc, $scope, $log, $state, $stateParams) {
 		
 		//$scope.selectedItem = $stateParams.itemForEdit;
 		$scope.selectedItem = angular.copy($stateParams.itemForEdit);
-				
+
 		$scope.openPropertyEditor = function(item){
 			$state.go('items.select.edit.property', {
 				selectedItem: $scope.selectedItem,
@@ -468,9 +512,15 @@
 		    masterDataSvc.update($stateParams.itemForEdit)
 		    	.then(function(item){
 					$state.go('items.select', {boId: $scope.selectedItem.mdh_id, selectedItem:$scope.selectedItem});
-		    	}, function(err){
-		    		console.error('Update Master data failed.' + err);	
-		    	});
+		    	}, function(reason){
+		    		var message = masterDataSvc.serviceErrorMessageFormatter('Updating Buisness Object failed', reason);
+					$log.error(message);
+					$stateParams.message = {
+							text: message,
+							type: 'alert-danger'
+					}				
+					$state.go($state.current, $stateParams, {reload: false});
+				});
 		};
 				
 	}])
@@ -484,7 +534,7 @@
 				$scope.item = {
 					mdi_name: "Item Name",
 					mdi_mdh_id: $stateParams.selectedItem.mdh_id
-				}
+				};
 			} else {
 				$scope.item = $stateParams.item;
 			}

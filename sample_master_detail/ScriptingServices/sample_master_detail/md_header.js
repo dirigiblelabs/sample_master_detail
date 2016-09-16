@@ -50,7 +50,6 @@ function handleRequest() {
 			"expanded": (expanded!==null),
 			"cascaded": (cascaded!==null)
 		};
-		console.info('++++ '+urlParameters)
 		md_headers.http.dispatch(urlParameters);	
 	}
 	
