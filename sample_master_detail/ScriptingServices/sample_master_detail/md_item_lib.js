@@ -9,7 +9,9 @@ var datasource = database.getDatasource();
 
 // Parse JSON entity into SQL and insert in db. Returns the new record id.
 exports.insert = function(item) {
-
+	
+	console.log('Inserting MD_ITEM entity ' + item);
+	
 	if(item === undefined || item === null){
 		throw new Error('Illegal argument: item is ' + item);
 	}
@@ -20,7 +22,7 @@ exports.insert = function(item) {
 	
 	if(item.mdi_name === undefined || item.mdi_name === null){
 		throw new Error('Illegal mdi_name attribute: ' + item.mdi_name);
-	}	
+	}
 	
     var connection = datasource.getConnection();
     try {
@@ -46,15 +48,17 @@ exports.insert = function(item) {
         item = createSQLEntity(item);
         
         var i = 0;
-        var id = datasource.getSequence('MD_ITEM_MDI_ID').next();
+        item.mdi_id = datasource.getSequence('MD_ITEM_MDI_ID').next();
         
-        statement.setInt(++i, id);
+        statement.setInt(++i, item.mdi_id);
         statement.setInt(++i, item.mdi_mdh_id);
         statement.setString(++i, item.mdi_name);
         statement.setString(++i, item.mdi_description);
         statement.executeUpdate();
-
-        return id;
+        
+        console.log('MD_ITEM entity inserted with mdi_id[' + item.mdi_id + ']');
+        
+        return item.mdi_id;
         
     } catch(e) {
 		e.errContext = sql;
@@ -62,11 +66,13 @@ exports.insert = function(item) {
     } finally {
         connection.close();
     }
-    return -1;
 };
 
 // Reads a single entity by id, parsed into JSON object 
 exports.find = function(id) {
+
+	console.log('Finding MD_ITEM entity with id ' + id);
+
     var connection = datasource.getConnection();
     try {
         var item;
@@ -77,8 +83,12 @@ exports.find = function(id) {
         var resultSet = statement.executeQuery();
         if (resultSet.next()) {
             item = createEntity(resultSet);
+            if(item)
+            	console.log('MD_ITEM entity with id[' + id + '] found');
         } 
+        
         return item;
+        
     } catch(e) {
 		e.errContext = sql;
 		throw e;
@@ -89,6 +99,9 @@ exports.find = function(id) {
 
 // Read all entities, parse and return them as an array of JSON objets
 exports.list = function(headerId, limit, offset, sort, desc) {
+
+	console.log('Listing MD_ITEM entity collection for header id ' + headerId + ' with list operators: limit['+limit+'], offset['+offset+'], sort['+sort+'], desc['+desc+']');
+
     var connection = datasource.getConnection();
     try {
         var items = [];
@@ -115,7 +128,11 @@ exports.list = function(headerId, limit, offset, sort, desc) {
         while (resultSet.next()) {
             items.push(createEntity(resultSet));
         }
+        
+        console.log('' + items.length +' MD_ITEM entities found');
+        
         return items;
+        
     }  catch(e) {
 		e.errContext = sql;
 		throw e;
@@ -131,18 +148,18 @@ function createEntity(resultSet) {
 	result.mdi_mdh_id = resultSet.getInt("MDI_MDH_ID");
     result.mdi_name = resultSet.getString("MDI_NAME");
     result.mdi_description = resultSet.getString("MDI_DESCRIPTION");
-    console.info(">>> " + result);
+    if(result.mdi_description === null)
+    	delete result.mdi_description;
+    console.log("Transformation from DB JSON object finished: " + result);
     return result;
 }
 
 //Prepare a JSON object for insert into DB
 function createSQLEntity(item) {
-    if(item){
-    	if(!item.mdi_description)
-    		item.mdi_description = null;
-		//perform any transofrmations here
-	}
-	console.info("<<< " + item);
+	if(!item.mdi_description)
+		item.mdi_description = null;    		
+	//perform any other transofrmations here
+	console.log("Transformation to DB JSON object finished: " + item);
 	return item;
 }
 
@@ -155,6 +172,8 @@ function convertToDateString(date) {
 
 // update entity from a JSON object. Returns the id of the updated entity.
 exports.update = function(item) {
+
+	console.log('Updating MD_ITEM entity ' + item);
 
 	if(item === undefined || item === null){
 		throw new Error('Illegal argument: item is ' + item);
@@ -192,7 +211,9 @@ exports.update = function(item) {
         statement.setInt(++i, id);
         statement.executeUpdate(); 
         
-        return id;
+        console.log('MD_ITEM entity with mdi_id[' + id + '] updated');
+        
+        return this;
         
     } catch(e) {
 		e.errContext = sql;
@@ -204,13 +225,20 @@ exports.update = function(item) {
 
 // delete entity by id. Returns the id of the deleted entity.
 exports.remove = function(id) {
+
+	console.log('Deleting MD_ITEM entity with id[' + id + ']');
+
     var connection = datasource.getConnection();
     try {
     	var sql = "DELETE FROM MD_ITEM WHERE " + exports.pkToSQL();
         var statement = connection.prepareStatement(sql);
         statement.setString(1, id);
         statement.executeUpdate();
-        return id;
+        
+        console.log('MD_ITEM entity with mdi_id[' + id + '] deleted');        
+        
+        return this;
+        
     }  catch(e) {
 		e.errContext = sql;
 		throw e;
@@ -221,6 +249,9 @@ exports.remove = function(id) {
 
 
 exports.count = function() {
+
+	console.log('Counting MD_ITEM entities');
+
     var count = 0;
     var connection = datasource.getConnection();
     try {
@@ -236,10 +267,16 @@ exports.count = function() {
     } finally {
         connection.close();
     }
+    
+    console.log('' + count + ' MD_ITEMS entities counted');         
+    
     return count;
 };
 
 exports.metadata = function() {
+
+	console.log('Exporting metadata for MD_ITEM type');
+
 	var entityMetadata = {
 		name: 'md_item',
 		type: 'object',
@@ -301,6 +338,8 @@ exports.http = {
 
 	dispatch: function(urlParameters){
 		var method = request.getMethod().toUpperCase();
+		console.log('Dispatching operation request for HTTP Verb['+ method +'] and URL parameters: ' + urlParameters);
+
 		if('POST' === method){
 			this.create();
 		} else if('PUT' === method){
