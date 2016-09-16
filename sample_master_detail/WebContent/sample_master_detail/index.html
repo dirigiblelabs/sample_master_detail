@@ -154,7 +154,7 @@
 		  });	
 	}])
 	.service('Entity', function($resource) {
-	  	return $resource('../../js/sample_master_detail/md_header.js/:boId', { boId:'@id' }, {
+	  	var res = $resource('../../js/sample_master_detail/md_header.js/:boId', { boId:'@id' }, {
 		    save: {
 		        method: 'POST',
 		        interceptor: {
@@ -175,9 +175,17 @@
 		        method: 'PUT'
 		    }
 		});
+		
+		res.newObjectTemplate = {
+				"mdh_name":"Business Object Name",
+				"mdh_description":"Description for business object"
+			};
+			
+		return res;
 	})
 	.service('Item', function($resource) {
-	  	return $resource('../../js/sample_master_detail/md_item.js/:boId', { boId:'@id' }, {
+	
+	  	var res = $resource('../../js/sample_master_detail/md_item.js/:boId', { boId:'@id' }, {
 		    save: {
 		        method: 'POST',
 		        interceptor: {
@@ -198,29 +206,40 @@
 		        method: 'PUT'
 		    }
 		});
+		
+		
+		res.newObjectTemplate = {
+					"mdi_name":"Item",
+					"mdi_description":"Description for Item"
+				};
+				
+		return res;
 	})	
 	.service('masterDataSvc', ['Entity', 'Item',  '$q', function(Entity, Item, $q) {
 	
-		this.query = function(){
-			return Entity.query({expanded:true}).$promise;
+		function createMasterDataTemplateObject(){
+			var obj = angular.copy(Entity.newObjectTemplate);
+			obj.items = [];
+			for(var i = 0; i < 3; i++){
+				var item = angular.copy(Item.newObjectTemplate);
+				item.mdi_name += ' ' +i;
+				obj.items.push(item);
+			}
+			return obj;
+		}
+		
+		this.masterDataTemplateObject = createMasterDataTemplateObject();
+	
+		this.query = function(expanded){
+			var reqParams = {};
+			reqParams.expanded = expanded || true;
+			return Entity.query(reqParams).$promise;
 		};
 
-		this.create = function(){
-			return Entity.save({cascaded: true}, {
-						"mdh_name":"Business Object Name",
-						"mdh_description":"Description for business object",
-		
-						"items": [{
-							"mdi_name":"Item 1",
-							"mdi_description":"Description for Item 1"
-						},{
-							"mdi_name":"Item 2",
-							"mdi_description":"Description for Item 2"
-						},{
-							"mdi_name":"Item 3",
-							"mdi_description":"Description for Item 3"
-						}]
-					}).$promise;
+		this.create = function(cascaded){
+			var reqParams = {};
+			reqParams.cascaded = cascaded || true;
+			return Entity.save(reqParams, this.masterDataTemplateObject).$promise;
 		};
 		
 		this.update = function(header){
@@ -247,11 +266,11 @@
 		};	
 		
 		this.remove = function(headerId, cascaded){
-			if(cascaded){
-				return Entity.remove({boId: headerId, cascaded: true}).$promise;
-			} else {
-				return Entity.remove({boId: headerId}).$promise;
-			}
+			var reqParams = {};
+			if(cascaded)
+				reqParams.cascaded = cascaded;
+			reqParams.boId = headerId;
+			return Entity.remove(reqParams).$promise;
 		};
 		
 	}])
