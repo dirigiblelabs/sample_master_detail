@@ -164,28 +164,34 @@
 		    }]
 		  });	
 	}])
-	.service('Entity', function($resource) {
-	  	var res = $resource('../../js/sample_master_detail/md_header.js/:boId', { boId:'@id' }, {
-		    save: {
-		        method: 'POST',
-		        interceptor: {
-	                response: function(res) {
-	                	var location = res.headers('Location');
-	                	if(location){
-	                		var id = location.substring(location.lastIndexOf('/')+1);
-	                		angular.extend(res.resource, { "mdh_id": id });
-                		} else {
-                			console.error('Cannot infer id after save operation. HTTP Response Header "Location" is missing: ' + location);
-            			}
-                        return res.resource;
-	                }
-	            }, 
-	            isArray: false
-		    },
-		    update: {
-		        method: 'PUT'
+	.service('ResourceSvcConfiguration', function() {
+	
+		return {
+			cfg: {
+			    save: {
+			        method: 'POST',
+			        interceptor: {
+		                response: function(res) {
+		                	var location = res.headers('Location');
+		                	if(location){
+		                		var id = location.substring(location.lastIndexOf('/')+1);
+		                		angular.extend(res.resource, { "mdh_id": id });
+	                		} else {
+	                			console.error('Cannot infer id after save operation. HTTP Response Header "Location" is missing: ' + location);
+	            			}
+	                        return res.resource;
+		                }
+		            }, 
+		            isArray: false
+			    },
+			    update: {
+			        method: 'PUT'
+			    }
 		    }
-		});
+		}
+	})
+	.service('Entity', ['$resource', 'ResourceSvcConfiguration', function($resource, ResourceSvcConfiguration) {
+	  	var res = $resource('../../js/sample_master_detail/md_header.js/:boId', { boId:'@id' }, ResourceSvcConfiguration.cfg);
 		
 		res.newObjectTemplate = {
 				"mdh_name":"Business Object Name",
@@ -193,30 +199,10 @@
 			};
 			
 		return res;
-	})
-	.service('Item', function($resource) {
+	}])
+	.service('Item', ['$resource', 'ResourceSvcConfiguration', function($resource, ResourceSvcConfiguration) {
 	
-	  	var res = $resource('../../js/sample_master_detail/md_item.js/:boId', { boId:'@id' }, {
-		    save: {
-		        method: 'POST',
-		        interceptor: {
-	                response: function(res) {
-	                	var location = res.headers('Location');
-	                	if(location){
-	                		var id = location.substring(location.lastIndexOf('/')+1);
-	                		angular.extend(res.resource, { "mdi_id": id });
-                		} else {
-                			console.error('Cannot infer id after save operation. HTTP Response Header "Location" is missing: ' + location);
-            			}
-                        return res.resource;
-	                }
-	            }, 
-	            isArray: false
-		    },
-		    update: {
-		        method: 'PUT'
-		    }
-		});
+	  	var res = $resource('../../js/sample_master_detail/md_item.js/:boId', { boId:'@id' }, ResourceSvcConfiguration.cfg);
 		
 		
 		res.newObjectTemplate = {
@@ -225,7 +211,7 @@
 				};
 				
 		return res;
-	})	
+	}])	
 	.service('masterDataSvc', ['Entity', 'Item',  '$q', function(Entity, Item, $q) {
 	
 		function createMasterDataTemplateObject(){
@@ -466,8 +452,7 @@
 		
 	}])
 	.controller('EditCtrl', ['masterDataSvc', '$scope', '$log', '$state', '$stateParams', function (masterDataSvc, $scope, $log, $state, $stateParams) {
-		
-		//$scope.selectedItem = $stateParams.itemForEdit;
+
 		$scope.selectedItem = angular.copy($stateParams.itemForEdit);
 
 		$scope.openPropertyEditor = function(item){
@@ -500,7 +485,7 @@
 		};
 		
 		$scope.saveItem = function() {
-		    masterDataSvc.update($stateParams.itemForEdit)
+		    masterDataSvc.update($scope.selectedItem)
 		    	.then(function(item){
 					$state.go('^', {boId: $scope.selectedItem.mdh_id, selectedItem:$scope.selectedItem}, {reload: true, location:false});
 		    	}, function(reason){
