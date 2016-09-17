@@ -26,7 +26,7 @@
 			<header class="page-title"><h1 class="h2">Business Objects Explorer</h1></header>
 			
 			<div class="page-content">
-				<div ui-view="master" ng-show="items" class="master col-xs-12 col-md-2 no-gutter-left"></div>
+				<div ui-view="master" ng-show="items.length" class="master col-xs-12 col-md-2 no-gutter-left"></div>
 				<div ui-view="detail"></div>
 			</div>
 			<div ui-view="notifications" class="notification-bar"></div>
@@ -60,6 +60,12 @@
 		      params: {
 		    	  message: undefined  
 		      },
+		      resolve: {
+		            entities: ['masterDataSvc',
+		                function(masterDataSvc) {
+		                	return masterDataSvc.query(true);
+		            	}]		            	
+		      },
 		      views: {
 		          'master': {
 		              templateUrl: 'views/master-list.html',
@@ -76,18 +82,23 @@
 		      }
 		    })
 		.state('items.select', {
-			  url: ":boId",
-		      params: {
-		    	  items: undefined,
-				  selectedItem: undefined
-		      },
-		      views: {
+			url: ":boId",
+		    params: {
+			  	selectedItem: undefined
+		    }, 
+			resolve: { 
+	            selectedItem: ['$stateParams',
+	                function($stateParams) {
+	                	return $stateParams.selectedItem;
+                }]
+            },
+            views: {
 		    	  'detail@': {
 					  templateUrl: "views/detail_view.html",
 					  controller: 'DetailsCtrl'
 			      }
-		      }
-		    })
+		     }
+		   })
 		.state('items.select.edit', {
 			  url: "edit",
 		      params: {
@@ -282,7 +293,6 @@
 			}
 			return message;
 		};
-
 		
 	}])
 	.controller('EmptyCtrl', ['masterDataSvc', '$scope', '$log', '$state', '$stateParams', function (masterDataSvc, $scope, $log, $state, $stateParams) {
@@ -294,87 +304,54 @@
 				$stateParams.message = {
 					text: 'New Buisness Object successfully created.',
 					type: 'alert-success'
-				}
-				$state.go($state.current, $stateParams, {reload: true});
+				};
 			}, function(reason){
 				var message = masterDataSvc.serviceErrorMessageFormatter('Creating new Buisness Object failed', reason);
 				$log.error(message);			
 				$stateParams.message = {
 						text: message,
 						type: 'alert-danger'
-				}
+				};
+			})
+			.finally(function(){
 				$state.go($state.current, $stateParams, {reload: true});
 			});
 		};
 	
 	}])
-	.controller('MasterListCtrl', ['masterDataSvc', '$scope', '$log', 'orderByFilter', '$state', '$stateParams', '$window', function (masterDataSvc, $scope, $log, orderBy, $state, $stateParams, $window) {
-		
+	.controller('MasterListCtrl', ['masterDataSvc', 'entities', '$scope', '$log', 'orderByFilter', '$state', '$stateParams', '$window', function (masterDataSvc, entities, $scope, $log, orderBy, $state, $stateParams, $window) {
 		/*Controller invoked upon routing or navigation click events*/
-		
-		$scope.items = $stateParams.items;
-		$scope.selectedItem= $stateParams.selectedItem;
+		$scope.items = entities;
 		
 		$scope.sortByPropertyName = 'mdh_name';
 	    $scope.reverse = false;//ASC
-		
-	 	$scope.sortBy = function(propertyName) {
-		    $scope.reverse = (propertyName !== null && $scope.propertyName === propertyName)
-		        ? !$scope.reverse : false;
-		    $scope.sortByPropertyName = propertyName;
-		    $scope.items = orderBy($scope.items, $scope.sortByPropertyName, $scope.reverse);
-		};
-		
-		$scope.selectItem = function(item){
-			if(!$scope.selectedItem && !item || ($scope.selectedItem && $scope.selectedItem.mdh_id === item.mdh_id))//noops
-				return;
-			if(item){
-				$scope.selectedItem = item;// save the selected item
-				$state.go('items.select', {
-					selectedItem: item,
-					boId: item.mdh_id
-				});
-			}
-		};
+				
+		this.$onInit = function(){
+			var itemId = $state.params.boId;//requested item id
+			if($scope.items.length >0) {
 
-		function init(){
-			var itemId = $state.params.boId;
-			if(!$scope.items){
-				masterDataSvc.query()
-				.then(function(result){
-					if(result && result.length>0){
-						
-						$scope.items = result;//initialize the items to display
-						$scope.sortBy($scope.sortByPropertyName);
-						
-						itemId = itemId || $scope.items[0].mdh_id;					
-						var item = findItemById(result, itemId);
-						if(item === undefined){
-							fireLocationError.apply(this);
-							item = result[0];	
-						}
-						$scope.selectItem.apply($scope, [item]);//set the requested item selected
-						
-					} else {
-						if(!!itemId){
-							fireLocationError.apply($scope);
-							$state.go('items', $stateParams);
-						}
+				$scope.sortBy($scope.sortByPropertyName);
+				
+				itemId = $state.params.boId || $scope.items[0].mdh_id;//in case no item id has been explicitly requested, preselect the id of the first one in the list
+				var item = $scope.items.filter(function(item){
+					if(item.mdh_id == itemId ){
+						return true;
 					}
-				});	
-			}
-		}
-		
-		function findItemById(items, itemId){
-			var item;
-			for(var i=0; i< items.length; i++){
-				if(items[i].mdh_id == itemId ){
-					item = items[i];
-					break;
+					return false;
+				})[0];
+				if(item === undefined){
+					fireLocationError.apply(this);
+					item = $scope.items[0];
+				}
+				$scope.selectItem.apply($scope, [item]);//set the requested item selected
+				
+			} else {
+				if(!!itemId){
+					fireLocationError.apply($scope);
+					$state.go('items', $stateParams);
 				}
 			}
-			return item;
-		}
+		};
 		
 		function fireLocationError(){
 			$log.debug('The requested application path ' + $window.location.href + " is not valid.");
@@ -384,17 +361,21 @@
 			};
 		}
 		
-		init.apply(this);
-		
-		function handleServiceError(text, errorPayload){
-			var message = masterDataSvc.serviceErrorMessageFormatter(text, errorPayload);
-			$log.error(message);			
-			$stateParams.message = {
-					text: message,
-					type: 'alert-danger'
-			};
+		$scope.sortBy = function(propertyName) {
+		    $scope.reverse = (propertyName !== null && $scope.propertyName === propertyName)
+		        ? !$scope.reverse : false;
+		    $scope.sortByPropertyName = propertyName;
+		    $scope.items = orderBy($scope.items, $scope.sortByPropertyName, $scope.reverse);
 		};
-	
+		
+		$scope.selectItem = function(item){
+			$scope.selectedItem = item;// save the selected item
+			$state.go('items.select', {
+				selectedItem: item,
+				boId: item.mdh_id
+			});
+		};
+		
 		$scope.createItem = function(){
 			masterDataSvc.create()
 			.then(function(newItem){
@@ -402,11 +383,12 @@
 				$stateParams.message = {
 					text: 'New Buisness Object successfully created.',
 					type: 'alert-success'
-				}
-				$state.go($state.current, $stateParams, {reload: true});
+				};
 			}, function(reason){
 				handleServiceError('Creating new Buisness Object failed', reason);
-				$state.go('^', $stateParams, {reload: true});
+			})
+			.finally(function(){
+				$state.go($state.current, $stateParams, {reload: true});
 			});
 		};
 		
@@ -418,7 +400,7 @@
 				$stateParams.message = {
 						text: 'Buisness Object successfully deleted.',
 						type: 'alert-success'
-					}
+					};
 				$state.go($state.current, $stateParams, {reload: true, location:true, inherit: false});
 			}, function(reason){
 				handleServiceError('Deleting Buisness Object failed', reason);
@@ -426,10 +408,19 @@
 			});
 		};
 		
-	}])
-	.controller('DetailsCtrl', ['masterDataSvc', '$scope', '$log', '$state', '$stateParams' , function (masterDataSvc, $scope, $log, $state, $stateParams) {
+		function handleServiceError(text, errorPayload){
+			var message = masterDataSvc.serviceErrorMessageFormatter(text, errorPayload);
+			$log.error(message);			
+			$stateParams.message = {
+					text: message,
+					type: 'alert-danger'
+			};
+		};
 		
-		$scope.selectedItem = $stateParams.selectedItem;
+	}])
+	.controller('DetailsCtrl', ['masterDataSvc', 'selectedItem', '$scope', '$log', '$state', '$stateParams' , function (masterDataSvc, selectedItem, $scope, $log, $state, $stateParams) {
+		
+		$scope.selectedItem = selectedItem;
 		
 		function handleServiceError(text, errorPayload){
 			var message = masterDataSvc.serviceErrorMessageFormatter(text, errorPayload);
@@ -465,7 +456,7 @@
 				$stateParams.message = {
 						text: 'Buisness Object successfully deleted.',
 						type: 'alert-success'
-					}
+					};
 				$state.go($state.current, $stateParams, {reload: true, location:true, inherit: false});
 			}, function(reason){
 					handleServiceError('Deleting Buisness Object failed', reason);
@@ -511,7 +502,7 @@
 		$scope.saveItem = function() {
 		    masterDataSvc.update($stateParams.itemForEdit)
 		    	.then(function(item){
-					$state.go('items.select', {boId: $scope.selectedItem.mdh_id, selectedItem:$scope.selectedItem});
+					$state.go('^', {boId: $scope.selectedItem.mdh_id, selectedItem:$scope.selectedItem}, {reload: true, location:false});
 		    	}, function(reason){
 		    		var message = masterDataSvc.serviceErrorMessageFormatter('Updating Buisness Object failed', reason);
 					$log.error(message);
