@@ -28,10 +28,10 @@
 		
 	<header class="header">
       <div class="btn-group pull-right">
-   		<button class="btn btn-success" ng-click="saveItem()">
+   		<button class="btn btn-success" ng-click="detailsEditorVm.saveItem()">
 		  <i class="fa fa-check" aria-hidden="true"></i>
 		</button>
-   		<button type="reset" class="btn" ng-click="cancelEdit()">
+   		<button type="reset" class="btn" ng-click="detailsEditorVm.cancelEdit()">
 		  <i class="fa fa-ban" aria-hidden="true"></i>
 		</button>
       </div>
@@ -43,8 +43,8 @@
 				<i class="fa fa-th"></i>
 			</div>
 			<div class="object-title">
-				<p class="title" editable-text="selectedItem.mdh_name">{{selectedItem.mdh_name}}</p>
-	    		<p class="subtitle" editable-text="selectedItem.mdh_description">{{selectedItem.mdh_description}}</p>											
+				<p class="title" editable-text="detailsEditorVm.selectedEntity.mdh_name">{{detailsEditorVm.selectedEntity.mdh_name}}</p>
+	    		<p class="subtitle" editable-text="detailsEditorVm.selectedEntity.mdh_description">{{detailsEditorVm.selectedEntity.mdh_description}}</p>											
 			</div>
 		</section>
 		<!--<section class="object-attributes">
@@ -63,7 +63,7 @@
 	
 	
 		<div class="toolbar btn-group pull-left">
-	   		<button type="submit" class="btn btn-primary" ng-click="openPropertyEditor()">
+	   		<button type="submit" class="btn btn-primary" ng-click="detailsEditorVm.openPropertyEditor()">
 			  <i class="fa fa-plus" aria-hidden="true"></i>
 			</button>
 		</div>	
@@ -75,18 +75,18 @@
 		</div>
 	
 		<div class="items-list">
-			<div ng-hide="selectedItem.items[0]" class="nodata-text">No Items</div>
+			<div ng-hide="detailsEditorVm.selectedEntity.items[0]" class="nodata-text">No Items</div>
 			<div class="list-group">
-			  <a class="list-group-item selected-{{entry._selected_}}" ng-repeat="entry in selectedItem.items|filter:searchText|orderBy:'mdi_name'">
+			  <a class="list-group-item selected-{{entry._selected_}}" ng-repeat="entry in detailsEditorVm.selectedEntity.items|filter:searchText|orderBy:'mdi_name'">
 			  	<div style="display:inline-block">
 					<div class="list-group-item-heading">{{entry.mdi_name}}</div>
 					<div class="list-group-item-text">{{entry.mdi_description}}</div>
 				</div>
 				<div class="btn-group pull-right">
-			   		<button class="btn btn-primary" ng-click="openPropertyEditor(entry)">
+			   		<button class="btn btn-primary" ng-click="detailsEditorVm.openPropertyEditor(entry)">
 					  <i class="fa fa-pencil" aria-hidden="true"></i>
 					</button>
-					<button class="btn btn-danger" ng-click="deleteProperty(entry)">
+					<button class="btn btn-danger" ng-click="detailsEditorVm.deleteProperty(entry)">
 					  <i class="glyphicon glyphicon-remove" aria-hidden="true"></i>
 					</button>
 				</div>					

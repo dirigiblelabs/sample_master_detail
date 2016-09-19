@@ -66,6 +66,10 @@
 	  margin-top: 5.7rem;
 	}
 	
+	.master section{
+	  overflow: auto;
+	}
+	
 	.master .nav>li>a {
 	  padding-left: 5px !important;
 	  padding-right: 10px !important;

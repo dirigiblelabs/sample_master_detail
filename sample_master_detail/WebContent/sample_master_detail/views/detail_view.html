@@ -1,13 +1,13 @@
 <div class="detail col-xs-8 col-md-10">
 	<header class="header">
       <div class="btn-group">
-   		<button type="submit" class="btn btn-primary" ng-click="startEdit()">
+   		<button type="submit" class="btn btn-primary" ng-click="detailsVm.startEdit()">
 		  <i class="fa fa-pencil" aria-hidden="true"></i>
 		</button>
-   		<button type="submit" class="btn btn-primary" ng-click="duplicateItem()">
+   		<button type="submit" class="btn btn-primary" ng-click="detailsVm.duplicateItem()">
 		  <i class="fa fa-files-o" aria-hidden="true"></i>
 		</button>
-		<button class="btn btn-danger" ng-click="deleteItem()">
+		<button class="btn btn-danger" ng-click="detailsVm.deleteItem()">
 		  <i class="glyphicon glyphicon-remove" aria-hidden="true"></i>
 		</button>
       </div>
@@ -19,8 +19,8 @@
 				<i class="fa fa-th"></i>
 			</div>
 			<div class="object-title">
-				<p class="title">{{selectedItem.mdh_name}}</p>
-	    		<p class="subtitle">{{selectedItem.mdh_description}}</p>						
+				<p class="title">{{detailsVm.selectedEntity.mdh_name}}</p>
+	    		<p class="subtitle">{{detailsVm.selectedEntity.mdh_description}}</p>						
 			</div>
 		</section>
 		<!--<section class="object-attributes">
@@ -45,9 +45,9 @@
 		</div>
 	
 		<div class="items-list">
-			<div ng-hide="selectedItem.items[0]" class="nodata-text">No Items</div>
+			<div ng-hide="detailsVm.selectedEntity.items[0]" class="nodata-text">No Items</div>
 			<div class="list-group">
-			  <a class="list-group-item selected-{{entry._selected_}}" ng-repeat="entry in selectedItem.items|filter:searchText|orderBy:'mdi_name'">
+			  <a class="list-group-item selected-{{entry._selected_}}" ng-repeat="entry in detailsVm.selectedEntity.items|filter:searchText|orderBy:'mdi_name'">
 				<div class="list-group-item-heading">{{entry.mdi_name}}</div>
 				<div class="list-group-item-text">{{entry.mdi_description}}</div>
 			  </a>

@@ -35,7 +35,7 @@ function handleRequest() {
 		}
 		
 		var sort = xss.escapeSql(request.getParameter('sort'));
-		var desc = xss.escapeSql(request.getParameter('desc'));
+		var order = xss.escapeSql(request.getParameter('order'));
 		
 		var urlParameters =  {
 			"id": id,
@@ -45,7 +45,7 @@ function handleRequest() {
 				"limit": limit,
 				"offset": offset,
 				"sort": sort,	
-				"desc": desc			
+				"order": order			
 			},
 			"expanded": (expanded!==null),
 			"cascaded": (cascaded!==null)

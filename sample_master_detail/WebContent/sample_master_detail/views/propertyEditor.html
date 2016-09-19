@@ -5,7 +5,7 @@
 </style>
 
 
-<div modal="showModal" close="cancel()" class="modal-box">
+<div modal="showModal" close="propsEditorVm.cancel()" class="modal-box">
 
 	<div class="modal-header">
 	    <h4>Edit Item</h4>
@@ -17,21 +17,21 @@
 		  <div class="form-group">
 		    <label for="mdi_name" class="col-sm-2 control-label" required="true">Name</label>
 		    <div class="col-sm-10">
-		      <input name="mdi_name" id="mdi_name" class="form-control" placeholder="Type Item Name" ng-model="item.mdi_name" minlength="1" required="true">
+		      <input name="mdi_name" id="mdi_name" class="form-control" placeholder="Type Item Name" ng-model="propsEditorVm.item.mdi_name" minlength="1" required="true">
 		    </div>
 		  </div>
 		  <div class="form-group">
 		    <label for="mdi_description" class="col-sm-2 control-label">Description</label>
 		    <div class="col-sm-10">
-		      <textarea name="mdi_description" id="mdi_description" class="form-control" placeholder="Type Item Description" ng-model="item.mdi_description"></textarea>
+		      <textarea name="mdi_description" id="mdi_description" class="form-control" placeholder="Type Item Description" ng-model="propsEditorVm.item.mdi_description"></textarea>
 		    </div>
 		  </div>
 		</form>
 	</div>
 	
 	<div class="modal-footer">
-	  <button class="btn btn-success" ng-click="ok()">OK</button>
-	  <button class="btn" ng-click="cancel()">Cancel</button>
+	  <button class="btn btn-success" ng-click="propsEditorVm.ok()">OK</button>
+	  <button class="btn" ng-click="propsEditorVm.cancel()">Cancel</button>
 	</div>
 	
 </div>

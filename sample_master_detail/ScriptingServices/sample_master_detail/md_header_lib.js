@@ -108,9 +108,9 @@ exports.find = function(id) {
 };
 
 // Read all entities, parse and return them as an array of JSON objets
-exports.list = function(limit, offset, sort, desc, expanded) {
+exports.list = function(limit, offset, sort, order, expanded) {
 
-	console.log('Listing MD_HEADER entity collection expanded['+expanded+'] with list operators: limit['+limit+'], offset['+offset+'], sort['+sort+'], desc['+desc+']');
+	console.log('Listing MD_HEADER entity collection expanded['+expanded+'] with list operators: limit['+limit+'], offset['+offset+'], sort['+sort+'], order['+order+']');
 
     var connection = datasource.getConnection();
     try {
@@ -123,8 +123,8 @@ exports.list = function(limit, offset, sort, desc, expanded) {
         if (sort !== null) {
             sql += " ORDER BY " + sort;
         }
-        if (sort !== null && desc !== null) {
-            sql += " DESC ";
+        if (sort !== null && order !== null) {
+            sql += " " + order;
         }
         if (limit !== null && offset !== null) {
             sql += " " + datasource.getPaging().genLimitAndOffset(limit, offset);
@@ -362,7 +362,7 @@ exports.http = {
 				} else if(urlParameters.count){
 					this.count();
 				} else if(urlParameters.list){
-					this.query(urlParameters.list.limit, urlParameters.list.offset, urlParameters.list.sort, urlParameters.list.desc, urlParameters.expanded);
+					this.query(urlParameters.list.limit, urlParameters.list.offset, urlParameters.list.sort, urlParameters.list.order, urlParameters.expanded);
 				}
 			} else {
 				this.query();
@@ -431,7 +431,7 @@ exports.http = {
 		}		
 	},
 	
-	query: function(limit, offset, sort, desc, expanded){
+	query: function(limit, offset, sort, order, expanded){
 		if (offset === undefined || offset === null) {
 			offset = 0;
 		} else if(isNaN(parseInt(offset)) || offset<0) {
@@ -452,14 +452,14 @@ exports.http = {
 			return;
 		}
 
-		if (desc === undefined) {
-			desc = null;
-		} else if(desc!==null){
+		if (order === undefined) {
+			order = null;
+		} else if(order!==null){
 			if(sort === null){
-				this.printError(response.BAD_REQUEST, 1, "Parameter desc is invalid without paramter sort to order by.");
+				this.printError(response.BAD_REQUEST, 1, "Parameter order is invalid without paramter sort to order by.");
 				return;
-			} else if(desc.toLowerCase()!=='desc' || desc.toLowerCase()!=='asc'){
-				this.printError(response.BAD_REQUEST, 1, "Invallid desc parameter: " + desc + ". Must be either ASC or DESC.");
+			} else if(['asc', 'desc'].indexOf(order.trim().toLowerCase())){
+				this.printError(response.BAD_REQUEST, 1, "Invallid order parameter: " + order + ". Must be either ASC or DESC.");
 				return;
 			}
 		}
@@ -468,7 +468,7 @@ exports.http = {
 		}
 
 	    try{
-			var items = exports.list(limit, offset, sort, desc, expanded);
+			var items = exports.list(limit, offset, sort, order, expanded);
 	        var jsonResponse = JSON.stringify(items, null, 2);
 	    	response.println(jsonResponse);      	
 		} catch(e) {
@@ -481,8 +481,9 @@ exports.http = {
 	count: function(){
 	    try{
 			var itemsCount = exports.count();
-			response.setHeader("Content-Type", "text/plain");
-	    	response.println(itemsCount);      	
+/*			response.setHeader("Content-Type", "text/plain");*/
+			response.setHeader("Content-Type", "application/json");
+	    	response.println('{"count":'+itemsCount+'}');      	
 		} catch(e) {
     	    var errorCode = response.INTERNAL_SERVER_ERROR ;
         	this.printError(errorCode, errorCode, e.message, e.errContext);
