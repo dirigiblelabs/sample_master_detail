@@ -61,12 +61,6 @@
 		      params: {
 		    	  message: undefined  
 		      },
-		      resolve: {
-		            list: ['masterDataSvc',
-		                function(masterDataSvc) {
-		                	return masterDataSvc.query({expanded: true, sort: 'mdh_name', desc:'ASC'});
-		            	}]
-		      },
 		      views: {
 		          'master': {
 		              templateUrl: 'views/master-list.html',
@@ -207,8 +201,10 @@
 			
 		return res;
 	}])
-	.service('EntityCount', ['$resource', function($resource) {
-	  	return $resource('../../js/sample_master_detail/md_header.js', {}, {query: {isArray:false}});
+	.service('EntityCount', ['$resource', 'ResourceSvcConfiguration', function($resource, ResourceSvcConfiguration) {
+		var cfg = angular.copy(ResourceSvcConfiguration.cfg);
+		cfg.query = {method:'GET', isArray:false};
+	  	return $resource('../../js/sample_master_detail/md_header.js?count=true', { }, cfg);
 	}])	
 	.service('Item', ['$resource', 'ResourceSvcConfiguration', function($resource, ResourceSvcConfiguration) {
 	
@@ -237,17 +233,20 @@
 		
 		this.masterDataTemplateObject = createMasterDataTemplateObject();
 		
-		this.loadedMasterData;
+		this.batchLoadedMasterData = [];
 		this.querySettings;
-		this.masterDataCount;
 	
+		/* make sure that sort and order properties of settings have not changed when paging and after the first page has been loaded. purge and start over again otehrwise */
 		this.query = function(settings){
 			this.querySettings = settings;
 			settings.expanded = (settings && settings.expanded!==undefined) || true;
 			var deferred = $q.defer();
 			Entity.query(settings).$promise
 			.then(jQuery.proxy(function(data){
-				this.loadedMasterData = data;
+				if(this.querySettings.limit)
+					this.batchLoadedMasterData = [].concat(this.batchLoadedMasterData, data);//append next page of data
+				else
+					this.batchLoadedMasterData = data;//overwrite
 				deferred.resolve(data);
 			}, this), function(error){
 				deferred.resolve(error);
@@ -262,7 +261,7 @@
 				  The second parameter addresses precisely these situations.	
 		*/
 		this.get = function(id, lookupRemotelyOnDemand){
-			var itemHit = this.loadedMasterData.filter(function(item){
+			var itemHit = this.batchLoadedMasterData.filter(function(item){
 					if(item.mdh_id == id ){
 						return true;
 					}
@@ -278,11 +277,10 @@
 					//now load the data set that contains this item with adapted offset constraint on the query					
 					var _itemHit, busy;
 					while(_itemHit == undefined){
-						this.settings.offset = this.loadedMasterData.length;
+						this.settings.offset = this.batchLoadedMasterData.length;//move to next page
 						busy = true;
 						this.query(this.settings)
-						.then(function(_data){
-							this.loadedMasterData = _data;
+						.then(function(){
 							this.get(id, false).then(
 							function(_item){
 								itemHit = _item;
@@ -309,14 +307,14 @@
 		};
 		
 		this.count = function(){
-			return EntityCount.query({count:true}).$promise;
+			return EntityCount.query().$promise;
 		};
 		
 		this.hasNext = function(){
 			var deferred = $q.defer();
 			var self = this;
-			this.count().then(function(_count){
-				if(_count>0 && _count> self.loadedMasterData.length)
+			this.count().then(function(_data){
+				if(_data.count > 0 && _data.count > self.batchLoadedMasterData.length)
 					deferred.resolve(true);	
 				else
 					deferred.resolve(false);	
@@ -327,13 +325,12 @@
 		this.next = function(){
 			var deferred = $q.defer();
 			var self = this;
-			this.hasNext().then(function(hasNext){
-				if(self.querySettings.limit){
-					this.querySettings.offset = this.loadedMasterData.length;
-					self.query(this.querySettings)
+			this.hasNext().then(function(_hasNext){
+				if(_hasNext){
+					self.querySettings.offset = self.batchLoadedMasterData.length;
+					self.query(self.querySettings)
 					.then(function(_data){
-						self.loadedMasterData = [].concat(self.loadedMasterData, _data);
-						deferred.resolve(_data);
+						deferred.resolve(self.batchLoadedMasterData);
 					}, 
 					function(error){
 						deferred.reject(error);
@@ -415,11 +412,16 @@
 		};
 	
 	}])
-	.controller('MasterListCtrl', ['masterDataSvc', 'list', '$log', 'orderByFilter', '$state', '$stateParams', '$window', function (masterDataSvc, list, $log, orderBy, $state, $stateParams, $window) {
+	.controller('MasterListCtrl', ['masterDataSvc', '$log', '$state', '$stateParams', '$window', function (masterDataSvc, $log, $state, $stateParams, $window) {
 
-		this.items = list;
+		this.items = masterDataSvc.batchLoadedMasterData;
+		this.querySettings = {
+			limit: 5,
+			sort: 'mdh_name',
+			order: 'ASC'
+		};
 				
-		this.$onInit = function(){
+		function init(){
 			var itemId = $state.params.boId;//requested item id
 			if(this.items.length > 0) {
 				
@@ -430,17 +432,12 @@
 							fireLocationError.apply(this);
 							item = this.items[0];
 						}
-						this.selectItem.apply(this, [item]);//set the item to be selected					
+						this.selectItem.apply(this, [item]);//set the item to be selected
 					}, this),
 					function(error){
 						handleServiceError('Looking up Buisness Object failed', error);
 					});
 				
-			} else {
-				if(!!itemId){
-					fireLocationError.apply(this);
-					$state.go('list', $stateParams);
-				}
 			}
 		};
 		
@@ -502,8 +499,23 @@
 		};
 		
 		this.next = function(){
+			//implement request for next data set for infinite scroll 
+			var self = this;
+			masterDataSvc.querySettings = this.querySettings;
+			masterDataSvc.hasNext()
+			.then(function(_hasMore){
+				self.hasMore = _hasMore;				
+				if(self.hasMore){
+					masterDataSvc.next().then(function(_items){
+						self.items = _items;
+						init.apply(self);
+					});
+				}
+			});
+
 		};
 		
+		this.hasMore;
 
 	}])
 	.controller('DetailsCtrl', ['masterDataSvc', 'selectedEntity', '$log', '$state', '$stateParams' , function (masterDataSvc, selectedEntity, $log, $state, $stateParams) {
