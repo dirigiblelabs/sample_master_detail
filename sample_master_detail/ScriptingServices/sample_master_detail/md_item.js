@@ -35,15 +35,17 @@ function handleRequest() {
 		var desc = xss.escapeSql(request.getParameter('desc'));
 		
 		var urlParameters =  {
-			id: id,
-			metadata: (metadata!==null),
-			count: (count!==null),
-			list : {
-				limit: limit,
-				offset: offset,
-				sort: sort,	
-				desc: desc			
-			}
+			"id": id,
+			"metadata": (metadata!==null),
+			"count": (count!==null),
+			"list" : {
+				"limit": limit,
+				"offset": offset,
+				"sort": sort,	
+				"order": order			
+			},
+			"expanded": (expanded!==null),
+			"cascaded": (cascaded!==null)
 		};
 		
 		md_items.http.dispatch(urlParameters);	

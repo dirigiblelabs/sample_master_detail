@@ -52,10 +52,10 @@
 	<script>
 	angular.module('businessObjects', ['ngAnimate', 'ngResource', 'ui.router', 'ui.bootstrap', 'xeditable', 'infinite-scroll'])
 	.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $urlRouterProvider) {
-				
+
 		$urlRouterProvider.otherwise("/");
 		
-		$stateProvider		
+		$stateProvider
 		.state('list', {
 			  url: "/",
 		      params: {

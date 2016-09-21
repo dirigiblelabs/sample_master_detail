@@ -98,9 +98,9 @@ exports.find = function(id) {
 };
 
 // Read all entities, parse and return them as an array of JSON objets
-exports.list = function(headerId, limit, offset, sort, desc) {
+exports.list = function(headerId, limit, offset, sort, order) {
 
-	console.log('Listing MD_ITEM entity collection for header id ' + headerId + ' with list operators: limit['+limit+'], offset['+offset+'], sort['+sort+'], desc['+desc+']');
+	console.log('Listing MD_ITEM entity collection for header id ' + headerId + ' with list operators: limit['+limit+'], offset['+offset+'], sort['+sort+'], order['+order+']');
 
     var connection = datasource.getConnection();
     try {
@@ -116,8 +116,8 @@ exports.list = function(headerId, limit, offset, sort, desc) {
         if (sort !== null && sort !== undefined) {
             sql += " ORDER BY " + sort;
         }
-        if ((sort !== null && sort !== undefined) && (desc !== null && desc !== undefined)) {
-            sql += " DESC ";
+        if ((sort !== null && sort !== undefined) && (order !== null && order !== undefined)) {
+            sql += " " + order;
         }
         if ((limit !== null && limit !== undefined) && (offset !== null && offset !== undefined)) {
             sql += " " + datasource.getPaging().genLimitAndOffset(limit, offset);
@@ -286,8 +286,8 @@ exports.metadata = function() {
 	var propertymdi_id = {
 		name: 'mdi_id',
 		type: 'integer',
-	key: 'true',
-	required: 'true'
+		key: 'true',
+		required: 'true'
 	};
     entityMetadata.properties.push(propertymdi_id);
 
@@ -424,7 +424,7 @@ exports.http = {
 		}		
 	},
 	
-	query: function(headerId, limit, offset, sort, desc){
+	query: function(headerId, limit, offset, sort, order){
 		if (headerId === undefined) {
 			headerId = null;
 		}
@@ -432,27 +432,34 @@ exports.http = {
 			offset = 0;
 		} else if(isNaN(parseInt(offset)) || offset<0) {
 			this.printError(response.BAD_REQUEST, 1, "Invallid offset parameter: " + offset + ". Must be a positive integer.");
+			return;
 		}
 
 		if (limit === undefined || limit === null) {
 			limit = 0;
 		}  else if(isNaN(parseInt(limit)) || limit<0) {
 			this.printError(response.BAD_REQUEST, 1, "Invallid limit parameter: " + limit + ". Must be a positive integer.");
+			return;			
 		}
 		if (sort === undefined) {
 			sort = null;
-		} 
-		if (desc === undefined) {
-			desc = null;
-		} else if(desc!==null){
+		} else if( sort !== null && this.validSortPropertyNames.indexOf(sort)<0){
+			this.printError(response.BAD_REQUEST, 1, "Invalid sort by property name: " + sort);
+			return;
+		}
+		if (order === undefined) {
+			order = null;
+		} else if(order!==null){
 			if(sort === null){
-				this.printError(response.BAD_REQUEST, 1, "Parameter desc is invalid without paramter sort to order by.");
-			} else if(desc.toLowerCase()!=='desc' || desc.toLowerCase()!=='asc'){
-				this.printError(response.BAD_REQUEST, 1, "Invallid desc parameter: " + desc + ". Must be either ASC or DESC.");
+				this.printError(response.BAD_REQUEST, 1, "Parameter order is invalid without paramter sort to order by.");
+				return;
+			} else if(['asc', 'desc'].indexOf(order.trim().toLowerCase())){
+				this.printError(response.BAD_REQUEST, 1, "Invallid order parameter: " + order + ". Must be either ASC or DESC.");
+				return;
 			}
 		}
 	    try{
-			var items = exports.list(headerId, limit, offset, sort, desc);
+			var items = exports.list(headerId, limit, offset, sort, desc, expanded);
 	        var jsonResponse = JSON.stringify(items, null, 2);
 	    	response.println(jsonResponse);      	
 		} catch(e) {

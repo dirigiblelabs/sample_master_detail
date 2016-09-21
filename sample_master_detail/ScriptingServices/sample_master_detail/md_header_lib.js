@@ -136,7 +136,7 @@ exports.list = function(limit, offset, sort, order, expanded) {
         	if(expanded !== null && expanded!==undefined){
 			   var dependentEntities = mdItems.list(entity.mdh_id, null, null, null, null);
 			   if(dependentEntities) {
-			   	 entity["items"] = dependentEntities;
+			   	 entity[itemsEntitySetName] = dependentEntities;
 		   	   }
 			}
             entities.push(entity);
@@ -244,7 +244,7 @@ exports.remove = function(id, cascaded) {
 			}
 		}        
         
-        console.log('MD_ITEM entity with mdi_id[' + id + '] deleted');                
+        console.log('MD_HEADER entity with mdh_id[' + id + '] deleted');                
         
         return this;
         
@@ -261,7 +261,6 @@ exports.count = function() {
 
 	console.log('Counting MD_HEADER entities');
 
-
     var count = 0;
     var connection = datasource.getConnection();
     try {
@@ -271,7 +270,7 @@ exports.count = function() {
         if (rs.next()) {
             count = rs.getInt(1);
         }
-    }  catch(e) {
+    } catch(e) {
 		e.errContext = sql;
 		throw e;
     } finally {
@@ -410,14 +409,14 @@ exports.http = {
 		}
 	},
 	
-	get: function(id){
+	get: function(id, expanded){
 		//id is mandatory parameter and an integer
 		if(id === undefined || isNaN(parseInt(id))) {
 			this.printError(response.BAD_REQUEST, 1, "Invallid id parameter: " + id);
 		}
 
 	    try{
-			var item = exports.find(id);
+			var item = exports.find(id, expanded);
 			if(!item){
         		this.printError(response.NOT_FOUND, 1, "Record with id: " + id + " does not exist.");
         		return;
